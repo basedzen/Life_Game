@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: gameoflife-backend
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./backend:/app
+      - game_data:/app/data
+    environment:
+      - SQLITE_URL=sqlite:////app/data/gameoflife.db
+    command: sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1"
+
+  frontend:
+    build: ./frontend
+    container_name: gameoflife-frontend
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+
+volumes:
+  game_data:
