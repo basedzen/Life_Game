@@ -22,7 +22,9 @@ class LogCreate(BaseModel):
 def create_log(log_data: LogCreate, session: Session = Depends(get_session)):
     # Parse timestamp if provided, otherwise use current time
     if log_data.timestamp:
-        timestamp = datetime.fromisoformat(log_data.timestamp.replace('Z', '+00:00'))
+        # Remove spaces and replace Z with timezone
+        cleaned_timestamp = log_data.timestamp.replace(' ', '').replace('Z', '+00:00')
+        timestamp = datetime.fromisoformat(cleaned_timestamp)
     else:
         timestamp = datetime.utcnow()
     
@@ -57,7 +59,9 @@ def update_log(log_id: int, log_update: LogCreate, session: Session = Depends(ge
     
     # Update timestamp if provided
     if log_update.timestamp:
-        db_log.timestamp = datetime.fromisoformat(log_update.timestamp.replace('Z', '+00:00'))
+        # Remove spaces and replace Z with timezone
+        cleaned_timestamp = log_update.timestamp.replace(' ', '').replace('Z', '+00:00')
+        db_log.timestamp = datetime.fromisoformat(cleaned_timestamp)
     
     session.add(db_log)
     session.commit()
