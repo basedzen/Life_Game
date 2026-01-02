@@ -5,7 +5,7 @@ services:
     build: ./backend
     container_name: gameoflife-backend
     ports:
-      - "${BACKEND_PORT}:8000"
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
     volumes:
       - ./backend:/app
       - ${APP_DATA_DIR}:/app/data
@@ -14,12 +14,12 @@ services:
       - TZ=${TZ}
       - PUID=${PUID}
       - PGID=${PGID}
-    command: sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1"
+    command: sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port ${BACKEND_PORT} --workers 1"
 
   frontend:
     build: ./frontend
     container_name: gameoflife-frontend
     ports:
-      - "${FRONTEND_PORT}:80"
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     depends_on:
       - backend
