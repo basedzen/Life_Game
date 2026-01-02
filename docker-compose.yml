@@ -7,7 +7,6 @@ services:
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     volumes:
-      - ./backend:/app
       - ${APP_DATA_DIR}:/app/data
     environment:
       - SQLITE_URL=sqlite:////app/data/gameoflife.db
