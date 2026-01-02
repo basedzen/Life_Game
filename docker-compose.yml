@@ -5,19 +5,19 @@ services:
     build: ./backend
     container_name: gameoflife-backend
     ports:
-      - "8001:8000"
+      - "${BACKEND_PORT}:8000"
     volumes:
       - ./backend:/app
-      - game_data:/app/data
+      - ${DATA_VOLUME}:/app/data
     environment:
-      - SQLITE_URL=sqlite:////app/data/gameoflife.db
+      - SQLITE_URL=${SQLITE_URL}
     command: sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1"
 
   frontend:
     build: ./frontend
     container_name: gameoflife-frontend
     ports:
-      - "3001:80"
+      - "${FRONTEND_PORT}:80"
     depends_on:
       - backend
 
