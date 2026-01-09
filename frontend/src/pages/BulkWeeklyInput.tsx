@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ChevronLeft, ChevronRight, Save, RefreshCw } from 'lucide-react';
+import { getMonday, addDays, formatDateKey, formatDateDisplay, formatDayHeader, formatTimestamp, getAEDTDate } from '@/lib/dateUtils';
 
 interface Ritual {
     id: number;
@@ -29,7 +30,7 @@ interface WeekData {
 export const BulkWeeklyInput: React.FC = () => {
     const [rituals, setRituals] = useState<Ritual[]>([]);
     const [weekData, setWeekData] = useState<WeekData>({});
-    const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getMonday(new Date()));
+    const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getMonday(getAEDTDate()));
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -62,9 +63,9 @@ export const BulkWeeklyInput: React.FC = () => {
             const weekEnd = weekDays[6];
 
             logs.forEach((log) => {
-                const logDate = new Date(log.timestamp);
+                const logDate = getAEDTDate(log.timestamp);
                 if (logDate >= weekStart && logDate <= weekEnd && log.ritual_id) {
-                    const dateStr = formatDate(logDate);
+                    const dateStr = formatDateKey(logDate);
 
                     if (!newWeekData[log.ritual_id]) {
                         newWeekData[log.ritual_id] = {};
@@ -91,37 +92,12 @@ export const BulkWeeklyInput: React.FC = () => {
         }
     };
 
-    function getMonday(date: Date): Date {
-        const d = new Date(date);
-        const day = d.getDay();
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-        return new Date(d.setDate(diff));
-    }
-
     const getDaysOfWeek = (): Date[] => {
         const days: Date[] = [];
         for (let i = 0; i < 7; i++) {
-            const day = new Date(currentWeekStart);
-            day.setDate(currentWeekStart.getDate() + i);
-            days.push(day);
+            days.push(addDays(currentWeekStart, i));
         }
         return days;
-    };
-
-    const formatDate = (date: Date): string => {
-        return date.toISOString().split('T')[0];
-    };
-
-    const formatDateDisplay = (date: Date): string => {
-        const day = date.getDate().toString().padStart(2, '0');
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
-    };
-
-    const formatDayHeader = (date: Date): string => {
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        return `${days[date.getDay()]} ${date.getDate()}`;
     };
 
     const handleCellChange = (ritualId: number, day: string, value: string) => {
@@ -149,13 +125,8 @@ export const BulkWeeklyInput: React.FC = () => {
                     const value = parseFloat(cellData.value);
 
                     if (!isNaN(value) && value >= 0) {
-                        const date = new Date(day);
-                        date.setHours(12, 0, 0, 0);
-
-                        const year = date.getFullYear();
-                        const month = String(date.getMonth() + 1).padStart(2, '0');
-                        const dayStr = String(date.getDate()).padStart(2, '0');
-                        const timestamp = `${year}-${month}-${dayStr}T12:00:00`;
+                        const date = getAEDTDate(day);
+                        const timestamp = formatTimestamp(date);
 
                         const logData = {
                             ritual_id: parseInt(ritualId),
@@ -189,15 +160,11 @@ export const BulkWeeklyInput: React.FC = () => {
     };
 
     const previousWeek = () => {
-        const newDate = new Date(currentWeekStart);
-        newDate.setDate(newDate.getDate() - 7);
-        setCurrentWeekStart(newDate);
+        setCurrentWeekStart(addDays(currentWeekStart, -7));
     };
 
     const nextWeek = () => {
-        const newDate = new Date(currentWeekStart);
-        newDate.setDate(newDate.getDate() + 7);
-        setCurrentWeekStart(newDate);
+        setCurrentWeekStart(addDays(currentWeekStart, 7));
     };
 
     const daysOfWeek = getDaysOfWeek();
@@ -255,7 +222,7 @@ export const BulkWeeklyInput: React.FC = () => {
                                             {ritual.target_value}
                                         </TableCell>
                                         {daysOfWeek.map((day, dayIdx) => {
-                                            const dateStr = formatDate(day);
+                                            const dateStr = formatDateKey(day);
                                             const cellData = weekData[ritual.id]?.[dateStr];
                                             return (
                                                 <TableCell key={dayIdx} className="p-2">

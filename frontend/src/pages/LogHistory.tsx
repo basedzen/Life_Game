@@ -7,6 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Edit2, Trash2, X, Check } from 'lucide-react';
+import { formatDateDisplay, getAEDTDate, formatInputDate, parseInputDate, formatTimestamp } from '@/lib/dateUtils';
+
+
 
 interface Log {
     id: number;
@@ -56,7 +59,14 @@ export const LogHistory: React.FC = () => {
     const handleSave = async () => {
         if (!editingId) return;
         try {
-            await api.put(`/logs/${editingId}`, editForm);
+            // If timestamp was changed, format it properly for backend
+            const updateData = { ...editForm };
+            if (editForm.timestamp) {
+                const date = parseInputDate(editForm.timestamp as string);
+                updateData.timestamp = formatTimestamp(date);
+            }
+
+            await api.put(`/logs/${editingId}`, updateData);
             setEditingId(null);
             setEditForm({});
             fetchData();
@@ -89,13 +99,6 @@ export const LogHistory: React.FC = () => {
         return quotas.find(q => q.id === id)?.name || `Quota #${id}`;
     };
 
-    const formatDate = (timestamp: string) => {
-        const date = new Date(timestamp);
-        const day = date.getDate().toString().padStart(2, '0');
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
-    };
 
     return (
         <div className="space-y-8">
@@ -126,7 +129,16 @@ export const LogHistory: React.FC = () => {
                                             <>
                                                 <TableCell colSpan={6}>
                                                     <div className="space-y-4">
-                                                        <div className="grid grid-cols-2 gap-4">
+                                                        <div className="grid grid-cols-3 gap-4">
+                                                            <div className="space-y-2">
+                                                                <Label htmlFor="edit-date">Date</Label>
+                                                                <Input
+                                                                    id="edit-date"
+                                                                    type="date"
+                                                                    value={editForm.timestamp ? formatInputDate(getAEDTDate(editForm.timestamp)) : ''}
+                                                                    onChange={e => setEditForm({ ...editForm, timestamp: e.target.value })}
+                                                                />
+                                                            </div>
                                                             <div className="space-y-2">
                                                                 <Label htmlFor="edit-value">Value</Label>
                                                                 <Input
@@ -160,7 +172,7 @@ export const LogHistory: React.FC = () => {
                                             </>
                                         ) : (
                                             <>
-                                                <TableCell className="font-medium">{formatDate(log.timestamp)}</TableCell>
+                                                <TableCell className="font-medium">{formatDateDisplay(getAEDTDate(log.timestamp))}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={log.metric_type === 'ritual' ? 'default' : 'secondary'}>
                                                         {log.metric_type}

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save } from 'lucide-react';
 import { getIconComponent } from '@/components/IconSelector';
+import { parseInputDate, formatTimestamp, getAEDTDate } from '@/lib/dateUtils';
 interface Ritual {
     id: number;
     name: string;
@@ -39,20 +40,8 @@ export const Logger: React.FC = () => {
     const handleLogRitual = async (ritualId: number, val: number, t: string, dateStr?: string) => {
         setLoading(true);
         try {
-            let logDate: Date;
-
-            if (dateStr) {
-                logDate = new Date(dateStr);
-            } else {
-                logDate = new Date();
-            }
-
-            logDate.setHours(12, 0, 0, 0);
-
-            const year = logDate.getFullYear();
-            const month = String(logDate.getMonth() + 1).padStart(2, '0');
-            const day = String(logDate.getDate()).padStart(2, '0');
-            const timestamp = `${year} -${month} -${day} T12:00:00`;
+            const logDate = dateStr ? parseInputDate(dateStr) : getAEDTDate();
+            const timestamp = formatTimestamp(logDate);
 
             await api.post('/logs/', {
                 ritual_id: ritualId,
@@ -76,20 +65,8 @@ export const Logger: React.FC = () => {
     const handleLogQuota = async (quotaId: number, val: number, t: string, dateStr?: string) => {
         setLoading(true);
         try {
-            let logDate: Date;
-
-            if (dateStr) {
-                logDate = new Date(dateStr);
-            } else {
-                logDate = new Date();
-            }
-
-            logDate.setHours(12, 0, 0, 0);
-
-            const year = logDate.getFullYear();
-            const month = String(logDate.getMonth() + 1).padStart(2, '0');
-            const day = String(logDate.getDate()).padStart(2, '0');
-            const timestamp = `${year} -${month} -${day} T12:00:00`;
+            const logDate = dateStr ? parseInputDate(dateStr) : getAEDTDate();
+            const timestamp = formatTimestamp(logDate);
 
             await api.post('/logs/', {
                 quota_id: quotaId,
