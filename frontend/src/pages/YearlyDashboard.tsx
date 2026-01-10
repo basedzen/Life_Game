@@ -77,6 +77,12 @@ export const YearlyDashboard: React.FC = () => {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {stats.rituals.map(ritual => {
+                            const monthlyTarget = ritual.target / 12;
+
+                            // Find max value for scaling (either max data point or the target)
+                            const maxDataVal = Math.max(...Object.values(ritual.monthly_breakdown), 0);
+                            const maxScale = Math.max(maxDataVal, monthlyTarget, 1);
+
                             return (
                                 <Card key={ritual.ritual_id}>
                                     <CardHeader>
@@ -99,24 +105,42 @@ export const YearlyDashboard: React.FC = () => {
                                         {/* Monthly mini chart */}
                                         <div>
                                             <div className="text-sm text-muted-foreground mb-2">Monthly Activity</div>
-                                            <div className="h-20 flex items-end gap-1">
-                                                {Array.from({ length: 12 }, (_, i) => {
-                                                    const date = new Date(new Date().getFullYear(), i, 1);
-                                                    const monthKey = date.toISOString().slice(0, 7); // YYYY-MM
-                                                    const monthVal = ritual.monthly_breakdown[monthKey] || 0;
+                                            <div className="h-24 flex items-end gap-1 relative pt-4">
+                                                {/* Target Line */}
+                                                {monthlyTarget > 0 && (
+                                                    <div
+                                                        className="absolute w-full border-t border-dashed border-muted-foreground/50 z-10 flex items-center"
+                                                        style={{ bottom: `${(monthlyTarget / maxScale) * 100}%` }}
+                                                    >
+                                                        <span className="text-[10px] text-muted-foreground bg-card px-1 absolute right-0 -translate-y-1/2">
+                                                            Target: {monthlyTarget.toFixed(0)}
+                                                        </span>
+                                                    </div>
+                                                )}
 
-                                                    // Find max value for scaling
-                                                    const maxVal = Math.max(...Object.values(ritual.monthly_breakdown), 1);
-                                                    const height = (monthVal / maxVal) * 100;
+                                                {Array.from({ length: 12 }, (_, i) => {
+                                                    // Create date object for the 1st of each month in current year
+                                                    const date = new Date(new Date().getFullYear(), i, 1);
+                                                    // Manually construct YYYY-MM key to avoid timezone shifts
+                                                    const year = date.getFullYear();
+                                                    const month = String(i + 1).padStart(2, '0');
+                                                    const monthKey = `${year}-${month}`;
+
+                                                    const monthVal = ritual.monthly_breakdown[monthKey] || 0;
+                                                    const height = (monthVal / maxScale) * 100;
                                                     const monthName = date.toLocaleDateString('en', { month: 'short' });
 
+                                                    // Check if target is met (and target > 0)
+                                                    const isTargetMet = monthlyTarget > 0 && monthVal >= monthlyTarget;
+                                                    const barColor = isTargetMet ? 'bg-[#618B28]' : 'bg-primary/80';
+
                                                     return (
-                                                        <div key={i} className="flex-1 flex flex-col justify-end group relative">
+                                                        <div key={i} className="flex-1 flex flex-col justify-end group relative z-20 h-full">
                                                             <div
-                                                                className="bg-primary/30 hover:bg-primary transition-all rounded-t"
-                                                                style={{ height: `${Math.max(height, 5)}%` }}
+                                                                className={`${barColor} hover:opacity-90 transition-all rounded-t w-full`}
+                                                                style={{ height: `${Math.max(height, 0)}%` }}
                                                             >
-                                                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-popover px-2 py-1 rounded border">
+                                                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-popover px-2 py-1 rounded border z-30">
                                                                     {monthName}: {monthVal.toFixed(0)}
                                                                 </div>
                                                             </div>
@@ -190,38 +214,6 @@ export const YearlyDashboard: React.FC = () => {
                     </div>
                 </div>
             )}
-
-            {/* Monthly Activity Overview */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Monthly Activity</CardTitle>
-                    <CardDescription>Total logs per month</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="h-64 flex items-end gap-2 pt-8">
-                        {Object.entries(stats.monthly_activity).sort().map(([month, count]) => (
-                            <div key={month} className="flex-1 flex flex-col justify-end group">
-                                <div
-                                    className="bg-primary/50 border-t border-x border-primary hover:bg-primary transition-all relative rounded-t"
-                                    style={{ height: `${Math.min(100, count * 2)}%` }}
-                                >
-                                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs opacity-0 group-hover:opacity-100 transition-opacity bg-popover px-2 py-1 rounded border">
-                                        {count}
-                                    </div>
-                                </div>
-                                <div className="text-xs text-center text-muted-foreground mt-2 rotate-45 origin-left translate-x-2">
-                                    {month}
-                                </div>
-                            </div>
-                        ))}
-                        {Object.keys(stats.monthly_activity).length === 0 && (
-                            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                                No activity recorded yet.
-                            </div>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 };
