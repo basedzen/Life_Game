@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { Trash2, Plus, ChevronUp, ChevronDown, Edit2, Check, X } from 'lucide-react';
 import { IconSelector, getIconComponent } from '@/components/IconSelector';
+import { TagInput } from '@/components/ui/TagInput';
 
 interface Ritual {
     id?: number;
@@ -47,7 +48,6 @@ export const ConfigDeck: React.FC = () => {
     const [editingQuota, setEditingQuota] = useState<number | null>(null);
     const [editedRitual, setEditedRitual] = useState<Ritual | null>(null);
     const [editedQuota, setEditedQuota] = useState<Quota | null>(null);
-    const [availableTags, setAvailableTags] = useState<string[]>([]);
 
     const fetchConfig = async () => {
         const r = await api.get('/config/rituals');
@@ -58,14 +58,6 @@ export const ConfigDeck: React.FC = () => {
         setRewards(rw.data);
         const dt = await api.get('/config/settings/dice_threshold');
         if (dt.data) setDiceThreshold(dt.data.value);
-
-        // Fetch tags for autocomplete
-        try {
-            const t = await api.get('/logs/tags');
-            setAvailableTags(t.data);
-        } catch (e) {
-            console.error("Failed to fetch tags", e);
-        }
     };
 
     useEffect(() => {
@@ -146,13 +138,13 @@ export const ConfigDeck: React.FC = () => {
         fetchConfig();
     };
 
-    const [version, setVersion] = useState<{ commit: string; buildTime: string } | null>(null);
+    const [version, setVersion] = useState<{ version: string } | null>(null);
 
     useEffect(() => {
         fetch('/version.json')
             .then(res => res.json())
             .then(data => setVersion(data))
-            .catch(() => setVersion({ commit: 'unknown', buildTime: 'unknown' }));
+            .catch(() => setVersion({ version: 'unknown' }));
     }, []);
 
     return (
@@ -210,18 +202,12 @@ export const ConfigDeck: React.FC = () => {
                                 </div>
                                 <div className="col-span-12 space-y-2">
                                     <Label htmlFor="ritual-default-tag">Default Tag (for Bulk Entry)</Label>
-                                    <Input
+                                    <TagInput
                                         id="ritual-default-tag"
-                                        list="tag-suggestions"
                                         value={newRitual.default_tag || ''}
-                                        onChange={e => setNewRitual({ ...newRitual, default_tag: e.target.value })}
-                                        placeholder="e.g. Gym, Reading"
+                                        onChange={val => setNewRitual({ ...newRitual, default_tag: val })}
+                                        placeholder="e.g. #Gym"
                                     />
-                                    <datalist id="tag-suggestions">
-                                        {availableTags.map(tag => (
-                                            <option key={tag} value={tag} />
-                                        ))}
-                                    </datalist>
                                 </div>
                                 <div className="col-span-2 flex items-end">
                                     <Button onClick={handleAddRitual} className="w-full">
@@ -256,10 +242,9 @@ export const ConfigDeck: React.FC = () => {
                                                         value={editedRitual?.icon}
                                                         onValueChange={icon => setEditedRitual({ ...editedRitual!, icon })}
                                                     />
-                                                    <Input
-                                                        list="tag-suggestions"
+                                                    <TagInput
                                                         value={editedRitual?.default_tag || ''}
-                                                        onChange={e => setEditedRitual({ ...editedRitual!, default_tag: e.target.value })}
+                                                        onChange={val => setEditedRitual({ ...editedRitual!, default_tag: val })}
                                                         placeholder="Default Tag"
                                                     />
                                                 </div>
@@ -541,7 +526,7 @@ export const ConfigDeck: React.FC = () => {
             </Tabs>
             {version && (
                 <div className="text-xs text-muted-foreground text-center mt-8">
-                    Build: {version.commit.substring(0, 7)} ({version.buildTime})
+                    Build: {version.version}
                 </div>
             )}
         </div>

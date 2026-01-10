@@ -17,10 +17,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      args:
-        - GIT_COMMIT=${GIT_COMMIT:-unknown}
-        - BUILD_TIME=${BUILD_TIME:-unknown}
+      context: .
+      dockerfile: frontend/Dockerfile
     container_name: gameoflife-frontend
     ports:
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
