@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Edit2, Trash2, X, Check } from 'lucide-react';
 import { formatDateDisplay, getAEDTDate, formatInputDate, parseInputDate, formatTimestamp } from '@/lib/dateUtils';
+import { TagInput } from '@/components/ui/TagInput';
 
 
 
@@ -150,10 +151,10 @@ export const LogHistory: React.FC = () => {
                                                             </div>
                                                             <div className="space-y-2">
                                                                 <Label htmlFor="edit-tag">Tag</Label>
-                                                                <Input
+                                                                <TagInput
                                                                     id="edit-tag"
                                                                     value={editForm.tag || ''}
-                                                                    onChange={e => setEditForm({ ...editForm, tag: e.target.value })}
+                                                                    onChange={val => setEditForm({ ...editForm, tag: val })}
                                                                 />
                                                             </div>
                                                         </div>
