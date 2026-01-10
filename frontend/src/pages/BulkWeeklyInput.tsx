@@ -84,7 +84,7 @@ export const BulkWeeklyInput: React.FC = () => {
                         newWeekData[log.ritual_id][dateStr] = {
                             value: newValue,
                             logId: newWeekData[log.ritual_id][dateStr].logId,
-                            tag: newWeekData[log.ritual_id][dateStr].tag, // Keep first tag found? Or maybe join them?
+                            tag: newWeekData[log.ritual_id][dateStr].tag,
                             originalValue: newValue
                         };
                     } else {
@@ -136,6 +136,8 @@ export const BulkWeeklyInput: React.FC = () => {
             for (const ritualId in weekData) {
                 for (const day in weekData[ritualId]) {
                     const cellData = weekData[ritualId][day];
+                    if (!cellData) continue;
+
                     const value = parseFloat(cellData.value);
                     const originalValue = parseFloat(cellData.originalValue || '0');
 
