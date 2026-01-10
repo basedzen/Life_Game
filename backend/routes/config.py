@@ -40,6 +40,7 @@ def update_ritual(ritual_id: int, ritual: Ritual, session: Session = Depends(get
     db_ritual.period = ritual.period
     db_ritual.sort_order = ritual.sort_order
     db_ritual.icon = ritual.icon
+    db_ritual.default_tag = ritual.default_tag
     session.add(db_ritual)
     session.commit()
     session.refresh(db_ritual)
