@@ -17,6 +17,7 @@ interface Ritual {
     period: string;
     sort_order?: number;
     icon?: string;
+    default_tag?: string;
 }
 
 interface Quota {
@@ -136,6 +137,15 @@ export const ConfigDeck: React.FC = () => {
         fetchConfig();
     };
 
+    const [version, setVersion] = useState<{ commit: string; buildTime: string } | null>(null);
+
+    useEffect(() => {
+        fetch('/version.json')
+            .then(res => res.json())
+            .then(data => setVersion(data))
+            .catch(() => setVersion({ commit: 'unknown', buildTime: 'unknown' }));
+    }, []);
+
     return (
         <div className="space-y-8">
             <h2 className="text-3xl font-bold tracking-tight">Configuration</h2>
@@ -189,6 +199,15 @@ export const ConfigDeck: React.FC = () => {
                                         onValueChange={icon => setNewRitual({ ...newRitual, icon })}
                                     />
                                 </div>
+                                <div className="col-span-12 space-y-2">
+                                    <Label htmlFor="ritual-default-tag">Default Tag (for Bulk Entry)</Label>
+                                    <Input
+                                        id="ritual-default-tag"
+                                        value={newRitual.default_tag || ''}
+                                        onChange={e => setNewRitual({ ...newRitual, default_tag: e.target.value })}
+                                        placeholder="e.g. Gym, Reading"
+                                    />
+                                </div>
                                 <div className="col-span-2 flex items-end">
                                     <Button onClick={handleAddRitual} className="w-full">
                                         <Plus className="h-4 w-4" />
@@ -222,6 +241,11 @@ export const ConfigDeck: React.FC = () => {
                                                         value={editedRitual?.icon}
                                                         onValueChange={icon => setEditedRitual({ ...editedRitual!, icon })}
                                                     />
+                                                    <Input
+                                                        value={editedRitual?.default_tag || ''}
+                                                        onChange={e => setEditedRitual({ ...editedRitual!, default_tag: e.target.value })}
+                                                        placeholder="Default Tag"
+                                                    />
                                                 </div>
                                                 <Button
                                                     size="icon"
@@ -251,6 +275,7 @@ export const ConfigDeck: React.FC = () => {
                                                     <div className="font-semibold">{r.name}</div>
                                                     <div className="text-sm text-muted-foreground">
                                                         {r.target_value} {r.unit} / {r.period}
+                                                        {r.default_tag && <span className="ml-2 text-xs bg-muted px-1 rounded">Tag: {r.default_tag}</span>}
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-1">
@@ -498,6 +523,11 @@ export const ConfigDeck: React.FC = () => {
                     </Card>
                 </TabsContent>
             </Tabs>
+            {version && (
+                <div className="text-xs text-muted-foreground text-center mt-8">
+                    Build: {version.commit.substring(0, 7)} ({version.buildTime})
+                </div>
+            )}
         </div>
     );
 };

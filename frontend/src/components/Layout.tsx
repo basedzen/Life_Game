@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const location = useLocation();
 
+
     const navItems = [
         { path: '/', icon: LayoutDashboard, label: 'Tracker' },
         { path: '/log', icon: PenTool, label: 'Log' },
@@ -33,8 +34,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     >
                         <item.icon size={24} />
                     </Link>
-                ))}
-            </nav>
+                ))}\n            </nav>
 
             {/* Main Content */}
             <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen pb-20 md:pb-8">

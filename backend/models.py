@@ -17,6 +17,7 @@ class Ritual(SQLModel, table=True):
     period: str = "weekly" # "weekly", "annual"
     sort_order: int = 0  # For custom ordering
     icon: Optional[str] = None  # e.g., "Book", "Dumbbell"
+    default_tag: Optional[str] = None # Default tag for bulk entries
 
 class Quota(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

@@ -12,6 +12,7 @@ interface Ritual {
     name: string;
     target_value: number;
     unit: string;
+    default_tag?: string;
 }
 
 interface Log {
@@ -19,11 +20,17 @@ interface Log {
     ritual_id: number;
     timestamp: string;
     value: number;
+    tag?: string;
 }
 
 interface WeekData {
     [ritualId: number]: {
-        [day: string]: { value: string; logId?: number };
+        [day: string]: {
+            value: string;
+            logId?: number;
+            tag?: string;
+            originalValue: string;
+        };
     };
 }
 
@@ -73,14 +80,19 @@ export const BulkWeeklyInput: React.FC = () => {
 
                     if (newWeekData[log.ritual_id][dateStr]) {
                         const currentValue = parseFloat(newWeekData[log.ritual_id][dateStr].value) || 0;
+                        const newValue = (currentValue + log.value).toString();
                         newWeekData[log.ritual_id][dateStr] = {
-                            value: (currentValue + log.value).toString(),
-                            logId: newWeekData[log.ritual_id][dateStr].logId
+                            value: newValue,
+                            logId: newWeekData[log.ritual_id][dateStr].logId,
+                            tag: newWeekData[log.ritual_id][dateStr].tag, // Keep first tag found? Or maybe join them?
+                            originalValue: newValue
                         };
                     } else {
                         newWeekData[log.ritual_id][dateStr] = {
                             value: log.value.toString(),
-                            logId: log.id
+                            logId: log.id,
+                            tag: log.tag,
+                            originalValue: log.value.toString()
                         };
                     }
                 }
@@ -107,7 +119,9 @@ export const BulkWeeklyInput: React.FC = () => {
                 ...prev[ritualId],
                 [day]: {
                     value: value,
-                    logId: prev[ritualId]?.[day]?.logId
+                    logId: prev[ritualId]?.[day]?.logId,
+                    tag: prev[ritualId]?.[day]?.tag,
+                    originalValue: prev[ritualId]?.[day]?.originalValue || '0'
                 }
             }
         }));
@@ -123,17 +137,26 @@ export const BulkWeeklyInput: React.FC = () => {
                 for (const day in weekData[ritualId]) {
                     const cellData = weekData[ritualId][day];
                     const value = parseFloat(cellData.value);
+                    const originalValue = parseFloat(cellData.originalValue || '0');
 
-                    if (!isNaN(value) && value >= 0) {
+                    // Only process if value has changed
+                    if (value !== originalValue) {
                         const date = getAEDTDate(day);
                         const timestamp = formatTimestamp(date);
+
+                        const ritual = rituals.find(r => r.id === parseInt(ritualId));
+
+                        // Determine tag: use existing tag if updating, otherwise default
+                        const tagToUse = cellData.logId && cellData.tag
+                            ? cellData.tag
+                            : (ritual?.default_tag || 'Bulk Entry');
 
                         const logData = {
                             ritual_id: parseInt(ritualId),
                             value: value,
                             timestamp: timestamp,
                             metric_type: 'ritual',
-                            tag: 'Bulk Entry'
+                            tag: tagToUse
                         };
 
                         if (cellData.logId && value > 0) {
