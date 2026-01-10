@@ -16,9 +16,7 @@ services:
     command: sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port ${BACKEND_PORT} --workers 1"
 
   frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
+    build: ./frontend
     container_name: gameoflife-frontend
     ports:
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
