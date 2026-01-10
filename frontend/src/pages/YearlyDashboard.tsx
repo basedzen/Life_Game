@@ -17,19 +17,29 @@ interface QuotaStat {
     monthly_breakdown: Record<string, number>;
 }
 
+interface RitualStat {
+    ritual_id: number;
+    name: string;
+    total: number;
+    target: number;
+    unit: string;
+    percent: number;
+    icon?: string;
+    monthly_breakdown: Record<string, number>;
+}
+
 interface YearlyStats {
     year_progress: number;
     monthly_activity: Record<string, number>;
+    rituals: RitualStat[];
     quotas: QuotaStat[];
 }
 
 export const YearlyDashboard: React.FC = () => {
     const [stats, setStats] = useState<YearlyStats | null>(null);
-    const [rituals, setRituals] = useState<any[]>([]);
 
     useEffect(() => {
         api.get('/stats/yearly').then(r => setStats(r.data));
-        api.get('/config/rituals').then(r => setRituals(r.data));
     }, []);
 
     const handleExport = () => {
@@ -59,23 +69,20 @@ export const YearlyDashboard: React.FC = () => {
             </Card>
 
             {/* Ritual Progress Section */}
-            {rituals && rituals.length > 0 && (
+            {stats.rituals && stats.rituals.length > 0 && (
                 <div>
                     <h3 className="text-2xl font-bold tracking-tight mb-4 flex items-center gap-2">
                         <Target className="h-6 w-6" />
                         Ritual Progress
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {rituals.map(ritual => {
-                            // Calculate yearly target (weekly target * 52 weeks)
-                            const yearlyTarget = ritual.target_value * 52;
-
+                        {stats.rituals.map(ritual => {
                             return (
-                                <Card key={ritual.id}>
+                                <Card key={ritual.ritual_id}>
                                     <CardHeader>
                                         <CardTitle className="text-lg">{ritual.name}</CardTitle>
                                         <CardDescription>
-                                            Weekly target: {ritual.target_value} {ritual.unit}
+                                            Yearly target: {ritual.target.toFixed(0)} {ritual.unit}
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
@@ -83,10 +90,10 @@ export const YearlyDashboard: React.FC = () => {
                                             <div className="flex justify-between text-sm mb-2">
                                                 <span className="text-muted-foreground">Yearly Progress</span>
                                                 <span className="font-medium">
-                                                    0 / {yearlyTarget.toFixed(0)} {ritual.unit}
+                                                    {ritual.total.toFixed(0)} / {ritual.target.toFixed(0)} {ritual.unit}
                                                 </span>
                                             </div>
-                                            <Progress value={0} className="h-2" />
+                                            <Progress value={ritual.percent} className="h-2" />
                                         </div>
 
                                         {/* Monthly mini chart */}
@@ -94,18 +101,23 @@ export const YearlyDashboard: React.FC = () => {
                                             <div className="text-sm text-muted-foreground mb-2">Monthly Activity</div>
                                             <div className="h-20 flex items-end gap-1">
                                                 {Array.from({ length: 12 }, (_, i) => {
-                                                    const monthProgress = 0; // Would come from actual data
-                                                    const height = monthProgress > 0 ? Math.min(100, monthProgress) : 5;
-                                                    const month = new Date(2025, i).toLocaleDateString('en', { month: 'short' });
+                                                    const date = new Date(new Date().getFullYear(), i, 1);
+                                                    const monthKey = date.toISOString().slice(0, 7); // YYYY-MM
+                                                    const monthVal = ritual.monthly_breakdown[monthKey] || 0;
+
+                                                    // Find max value for scaling
+                                                    const maxVal = Math.max(...Object.values(ritual.monthly_breakdown), 1);
+                                                    const height = (monthVal / maxVal) * 100;
+                                                    const monthName = date.toLocaleDateString('en', { month: 'short' });
 
                                                     return (
                                                         <div key={i} className="flex-1 flex flex-col justify-end group relative">
                                                             <div
                                                                 className="bg-primary/30 hover:bg-primary transition-all rounded-t"
-                                                                style={{ height: `${height}%` }}
+                                                                style={{ height: `${Math.max(height, 5)}%` }}
                                                             >
                                                                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-popover px-2 py-1 rounded border">
-                                                                    {month}: {monthProgress}%
+                                                                    {monthName}: {monthVal.toFixed(0)}
                                                                 </div>
                                                             </div>
                                                         </div>

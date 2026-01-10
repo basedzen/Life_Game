@@ -93,3 +93,10 @@ def update_setting(setting: Setting, session: Session = Depends(get_session)):
 @router.get("/settings", response_model=List[Setting])
 def read_settings(session: Session = Depends(get_session)):
     return session.exec(select(Setting)).all()
+
+@router.get("/settings/{key}", response_model=Setting)
+def get_setting(key: str, session: Session = Depends(get_session)):
+    setting = session.get(Setting, key)
+    if not setting:
+        raise HTTPException(status_code=404, detail="Setting not found")
+    return setting

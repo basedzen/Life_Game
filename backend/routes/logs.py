@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlmodel import Session, select
 from database import get_session
-from models import Log, MetricType
+from models import Log, MetricType, Ritual, Quota
 from typing import List, Optional
 from pydantic import BaseModel
 import csv
@@ -80,13 +80,25 @@ def delete_log(log_id: int, session: Session = Depends(get_session)):
 @router.get("/export")
 def export_logs(session: Session = Depends(get_session)):
     logs = session.exec(select(Log)).all()
+    rituals = session.exec(select(Ritual)).all()
+    quotas = session.exec(select(Quota)).all()
+    
+    # Create lookup maps
+    ritual_map = {r.id: r.name for r in rituals}
+    quota_map = {q.id: q.name for q in quotas}
     
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["id", "ritual_id", "quota_id", "timestamp", "value", "tag", "metric_type"])
+    writer.writerow(["id", "ritual_id", "quota_id", "name", "timestamp", "value", "tag", "metric_type"])
     
     for log in logs:
-        writer.writerow([log.id, log.ritual_id, log.quota_id, log.timestamp, log.value, log.tag, log.metric_type])
+        name = ""
+        if log.ritual_id and log.ritual_id in ritual_map:
+            name = ritual_map[log.ritual_id]
+        elif log.quota_id and log.quota_id in quota_map:
+            name = quota_map[log.quota_id]
+            
+        writer.writerow([log.id, log.ritual_id, log.quota_id, name, log.timestamp, log.value, log.tag, log.metric_type])
     
     return Response(content=output.getvalue(), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=logs.csv"})
 

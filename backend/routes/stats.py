@@ -98,6 +98,41 @@ def get_yearly_stats(session: Session = Depends(get_session)):
         month = log.timestamp.strftime("%Y-%m")
         monthly_counts[month] = monthly_counts.get(month, 0) + 1
     
+    # Ritual statistics
+    rituals = session.exec(select(Ritual).order_by(Ritual.sort_order)).all()
+    ritual_stats = []
+
+    for ritual in rituals:
+        logs = session.exec(
+            select(Log)
+            .where(Log.ritual_id == ritual.id)
+            .where(Log.timestamp >= start_of_year)
+            .where(Log.metric_type == MetricType.ritual)
+        ).all()
+
+        total_value = sum(log.value for log in logs)
+        
+        # Calculate yearly target (weekly target * 52 weeks)
+        yearly_target = ritual.target_value * 52 if ritual.period == "weekly" else ritual.target_value
+        percent = min(100, (total_value / yearly_target) * 100) if yearly_target > 0 else 0
+
+        # Monthly breakdown for this ritual
+        monthly_breakdown = {}
+        for log in logs:
+            month = log.timestamp.strftime("%Y-%m")
+            monthly_breakdown[month] = monthly_breakdown.get(month, 0) + log.value
+
+        ritual_stats.append({
+            "ritual_id": ritual.id,
+            "name": ritual.name,
+            "total": total_value,
+            "target": yearly_target,
+            "unit": ritual.unit,
+            "percent": percent,
+            "icon": ritual.icon,
+            "monthly_breakdown": monthly_breakdown
+        })
+
     # Quota statistics
     quotas = session.exec(select(Quota).order_by(Quota.sort_order)).all()
     quota_stats = []
@@ -132,6 +167,7 @@ def get_yearly_stats(session: Session = Depends(get_session)):
     return {
         "year_progress": year_progress,
         "monthly_activity": monthly_counts,
+        "rituals": ritual_stats,
         "quotas": quota_stats
     }
 
