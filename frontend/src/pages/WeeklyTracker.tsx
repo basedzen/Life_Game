@@ -41,16 +41,23 @@ export const WeeklyTracker: React.FC = () => {
     const [showReward, setShowReward] = useState<Reward | null>(null);
     const [diceThreshold, setDiceThreshold] = useState<number>(75);
 
+    const [error, setError] = useState<string | null>(null);
+
     useEffect(() => {
         fetchStats();
-        api.get('/config/rewards').then(r => setRewards(r.data));
+        api.get('/config/rewards').then(r => setRewards(r.data)).catch(console.error);
         api.get('/config/settings/dice_threshold').then(r => {
             if (r.data) setDiceThreshold(parseInt(r.data.value));
-        });
+        }).catch(console.error);
     }, []);
 
     const fetchStats = () => {
-        api.get('/stats/weekly').then(r => setStats(r.data));
+        api.get('/stats/weekly')
+            .then(r => setStats(r.data))
+            .catch(e => {
+                console.error(e);
+                setError('Failed to load stats. Please check backend connection.');
+            });
     };
 
     const handleRoll = () => {
@@ -71,7 +78,8 @@ export const WeeklyTracker: React.FC = () => {
         }, 100);
     };
 
-    if (!stats) return <div className="text-muted-foreground">Loading...</div>;
+    if (error) return <div className="text-destructive p-4">{error}</div>;
+    if (!stats) return <div className="text-muted-foreground p-4">Loading...</div>;
 
     const isUnlocked = stats.unlock_percent >= diceThreshold;
 
